@@ -91,7 +91,7 @@ MiniMax Code 的登录态存在 `~/.minimax/auth/prod/<区>/mcode-public/auth.js
 MiniMax Code 客户端里有个 `/checkin` 命令，每天可领一次积分（7 天一循环）。本代理实现了同一套接口与签名：
 
 - **开启**：在 `config.json` 里设 `"checkin": { "enabled": true }`（默认关闭）；
-- **自动执行**：启动后与每 30 分钟（`checkin.intervalMinutes` 可调）检查一次，当天未领则领取；结果记在 `checkin-state.json`（已被 gitignore）；
+- **自动执行**：启动后与每 30 分钟（`checkin.intervalMinutes` 可调）检查一次，当天未领则领取；结果记在 `checkin-state.json`；
 - **手动触发**：`curl -X POST http://127.0.0.1:15722/checkin`，立即对全部账号执行一遍；
 - **结果语义**：`claimed`（领取成功，含 `points`）、`already`（今日已领）、`not-claimable`（服务端判定当前不可领）、`error`（瞬时失败，下个周期自动重试）。实现上直接调用 claim 接口、由服务端裁决（status 面板数据易变，claim 结果才是权威的）。
 
