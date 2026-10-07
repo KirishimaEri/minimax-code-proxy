@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#16233b"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e73562"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="300" fill="url(#bg)"/>
+  <circle cx="1080" cy="30" r="190" fill="#e73562" opacity="0.06"/>
+  <circle cx="80" cy="290" r="160" fill="#38bdf8" opacity="0.05"/>
+
+  <text x="600" y="118" text-anchor="middle"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="58" font-weight="700" letter-spacing="1"
+        fill="#f8fafc">minimax-code-proxy</text>
+
+  <rect x="470" y="146" width="260" height="6" rx="3" fill="url(#bar)"/>
+
+  <text x="600" y="196" text-anchor="middle"
+        font-family="'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif"
+        font-size="24" fill="#94a3b8">把 MiniMax Code 登录态变成 Anthropic 兼容端点</text>
+
+  <g font-family="ui-monospace, Menlo, Consolas, monospace" font-size="20">
+    <rect x="335" y="228" width="200" height="40" rx="20" fill="#111c30" stroke="#2c3a52"/>
+    <text x="435" y="254" text-anchor="middle" fill="#7dd3fc">Claude Code</text>
+    <text x="600" y="254" text-anchor="middle" fill="#e73562">→</text>
+    <rect x="665" y="228" width="200" height="40" rx="20" fill="#111c30" stroke="#2c3a52"/>
+    <text x="765" y="254" text-anchor="middle" fill="#fda4af">MiniMax-M3</text>
+  </g>
+</svg>
