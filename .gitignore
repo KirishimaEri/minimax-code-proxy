@@ -1,0 +1,7 @@
+config.json
+proxy.log
+proxy.log.*
+*.log
+node_modules/
+.DS_Store
+Thumbs.db

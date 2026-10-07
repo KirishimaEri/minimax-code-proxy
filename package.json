@@ -1,0 +1,23 @@
+{
+  "name": "minimax-code-proxy",
+  "version": "1.0.0",
+  "description": "Turn a logged-in MiniMax Code account into a local Anthropic-compatible endpoint for Claude Code and other Anthropic-protocol clients",
+  "type": "module",
+  "main": "proxy.mjs",
+  "bin": {
+    "minimax-code-proxy": "proxy.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "minimax",
+    "claude",
+    "claude-code",
+    "anthropic",
+    "proxy",
+    "mcp",
+    "llm"
+  ],
+  "license": "MIT"
+}
