@@ -441,32 +441,16 @@ async function signinFetch(acc, method, pathWithQueryPath) {
 }
 
 async function checkinAccount(acc) {
+  // The status panel is flaky (the days list can come back empty), but the
+  // claim endpoint is authoritative: it reports claim_result 1 (claimed now)
+  // or 2 (already claimed today) and knows the current cycle day server-side.
   try {
-    const stRes = await signinFetch(acc, 'GET', '/minimax-cloud/api/v1/signin/status');
-    const stText = await stRes.text();
-    if (!stRes.ok) return { status: 'error', detail: `status HTTP ${stRes.status}: ${stText.slice(0, 200)}` };
-    const st = JSON.parse(stText);
-    if (st.base_resp?.status_code !== 0) {
-      return { status: 'error', detail: `status base_resp ${st.base_resp?.status_code}: ${st.base_resp?.status_msg}` };
-    }
-    const today = (st.data?.panel?.days || []).find((d) => d.is_today);
-    if (!today) {
-      const hint = readUserId(acc) === '0'
-        ? ' (hint: set accounts[].userId — the panel is empty without a real user id)'
-        : '';
-      return { status: 'not-available', detail: `panel has no is_today entry${hint}` };
-    }
-    if (today.status !== 2) {
-      // 1=upcoming, 3=claimed, 4=disabled
-      return { status: today.status === 3 ? 'already' : 'not-claimable', detail: `cycle day ${today.day_no}, status ${today.status}` };
-    }
-
     const claimRes = await signinFetch(acc, 'POST', '/minimax-cloud/api/v1/signin/claim');
     const claimText = await claimRes.text();
     if (!claimRes.ok) return { status: 'error', detail: `claim HTTP ${claimRes.status}: ${claimText.slice(0, 200)}` };
     const cl = JSON.parse(claimText);
     if (cl.base_resp?.status_code !== 0) {
-      return { status: 'error', detail: `claim base_resp ${cl.base_resp?.status_code}: ${cl.base_resp?.status_msg}` };
+      return { status: 'not-claimable', detail: `base_resp ${cl.base_resp?.status_code}: ${cl.base_resp?.status_msg}` };
     }
     const d = cl.data || {};
     return {

@@ -93,9 +93,9 @@ MiniMax Code 客户端里有个 `/checkin` 命令，每天可领一次积分（7
 - **开启**：在 `config.json` 里设 `"checkin": { "enabled": true }`（默认关闭）；
 - **自动执行**：启动后与每 30 分钟（`checkin.intervalMinutes` 可调）检查一次，当天未领则领取；结果记在 `checkin-state.json`（已被 gitignore）；
 - **手动触发**：`curl -X POST http://127.0.0.1:15722/checkin`，立即对全部账号执行一遍；
-- **结果语义**：`claimed`（领取成功，含 `points`）、`already`（今日已领）、`not-claimable` / `not-available`（面板不可用）、`error`（瞬时失败，下个周期自动重试）。
+- **结果语义**：`claimed`（领取成功，含 `points`）、`already`（今日已领）、`not-claimable`（服务端判定当前不可领）、`error`（瞬时失败，下个周期自动重试）。实现上直接调用 claim 接口、由服务端裁决（status 面板数据易变，claim 结果才是权威的）。
 
-**`userId` 说明**：签到面板依赖账号的 `realUserID`。用 `mcode` CLI 登录的数据目录会自动从 `cli-auth/.../account-identity.json` 读取；桌面版登录的目录需要在 `accounts[].userId` 里手动填（桌面版配置 `minimax-agent-cn-config.json` 的 `sharedUser.realUserID`）。不填时请求仍会成功，但面板为空、无法判断签到状态。
+**`userId` 说明**：签到请求带账号的 `realUserID` 作为客户端归因字段。用 `mcode` CLI 登录的数据目录会自动从 `cli-auth/.../account-identity.json` 读取；桌面版登录的目录需要在 `accounts[].userId` 里手动填（桌面版配置 `minimax-agent-cn-config.json` 的 `sharedUser.realUserID`）。
 
 ## 👥 多账号轮询
 
@@ -154,9 +154,9 @@ MiniMax Code 官方的多账号方式是**多个数据目录**（`mcode --profil
 ## ❓ 常见问题
 
 <details>
-<summary><b>⏰ 签到一直 not-available</b></summary>
+<summary><b>⏰ 签到一直 not-claimable</b></summary>
 
-签到面板依赖账号的 `realUserID`。给对应的 `accounts[].userId` 填上(桌面版用户看 `%APPDATA%\MiniMax\minimax-agent-cn-config.json` 的 `sharedUser.realUserID`;CLI 用户确认该数据目录执行过 `mcode login`),再 `POST /checkin` 验证。
+先 `POST /checkin` 看返回的 `base_resp` 信息：若提示凭据问题就重新登录；确认 `accounts[].userId` 已填（桌面版用户看 `%APPDATA%\MiniMax\minimax-agent-cn-config.json` 的 `sharedUser.realUserID`）。部分套餐可能没有签到活动，属正常。
 </details>
 
 <details>
