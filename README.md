@@ -6,7 +6,7 @@
 
 **把已登录的 MiniMax Code 账号，变成 Claude Code 能直接用的本地 Anthropic 端点**
 
-<a href="https://github.com/KirishimaEri/minimax-code-proxy/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v1.0.0-blue"></a>
+<a href="https://github.com/KirishimaEri/minimax-code-proxy/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-v1.1.0-blue"></a>
 <a href="https://nodejs.org"><img alt="Node.js" src="https://img.shields.io/badge/Node.js-18%2B-339933"></a>
 <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
 <img alt="Protocol" src="https://img.shields.io/badge/protocol-Anthropic_Messages-d97757">
@@ -14,7 +14,7 @@
 
 [特性](#-特性) · [工作原理](#-工作原理) · [快速开始](#-快速开始) · [配置与映射](#-配置与模型映射) · [常见问题](#-常见问题)
 
-`免 API Key` `登录态自动续期` `标准 Anthropic 协议 + SSE` `单文件 · 零依赖` `cn / global 双区`
+`免 API Key` `登录态自动续期` `每日自动签到` `多账号轮询` `标准 Anthropic 协议 + SSE` `单文件 · 零依赖`
 
 </div>
 
@@ -29,6 +29,8 @@
 - [✨ 特性](#-特性)
 - [🔎 工作原理](#-工作原理)
 - [🚀 快速开始](#-快速开始)
+- [⏰ 自动签到](#-自动签到)
+- [👥 多账号轮询](#-多账号轮询)
 - [🧩 配置与模型映射](#-配置与模型映射)
 - [📮 端点](#-端点)
 - [❓ 常见问题](#-常见问题)
@@ -43,6 +45,8 @@
 - 📡 **标准 Anthropic 协议** — `/v1/messages`、`/v1/messages/count_tokens`、`/v1/models`，流式为标准 Anthropic SSE 透传。
 - 🏷️ **模型映射** — 客户端发 `claude-sonnet-5`、`claude-haiku-4-5` 等名字也能路由到合适的 MiniMax 模型。
 - 🌏 **cn / global 双区** — 自动适配 `agent.minimax.{cn,io}` 上游与对应凭据路径。
+- ⏰ **每日自动签到** — 等价于 mcode 客户端 `/checkin` 命令的每日积分领取，按账号自动执行，也可 `POST /checkin` 手动触发。
+- 👥 **多账号轮询** — 配置多个 MiniMax Code 数据目录，请求按 round-robin 轮换，遇 401 / 429 自动切换到下一个账号。
 - 🪶 **单文件零依赖** — 一个 `proxy.mjs`，Node.js ≥ 18 即可运行。
 
 ## 🔎 工作原理
@@ -82,6 +86,36 @@ MiniMax Code 的登录态存在 `~/.minimax/auth/prod/<区>/mcode-public/auth.js
 > **Windows 开机自启**：用 `wscript` 跑一个隐藏启动脚本（`start-hidden.vbs`）：
 > `CreateObject("WScript.Shell").Run """node"" ""<本项目路径>\proxy.mjs""", 0, False`
 
+## ⏰ 自动签到
+
+MiniMax Code 客户端里有个 `/checkin` 命令，每天可领一次积分（7 天一循环）。本代理实现了同一套接口与签名：
+
+- **开启**：在 `config.json` 里设 `"checkin": { "enabled": true }`（默认关闭）；
+- **自动执行**：启动后与每 30 分钟（`checkin.intervalMinutes` 可调）检查一次，当天未领则领取；结果记在 `checkin-state.json`（已被 gitignore）；
+- **手动触发**：`curl -X POST http://127.0.0.1:15722/checkin`，立即对全部账号执行一遍；
+- **结果语义**：`claimed`（领取成功，含 `points`）、`already`（今日已领）、`not-claimable` / `not-available`（面板不可用）、`error`（瞬时失败，下个周期自动重试）。
+
+**`userId` 说明**：签到面板依赖账号的 `realUserID`。用 `mcode` CLI 登录的数据目录会自动从 `cli-auth/.../account-identity.json` 读取；桌面版登录的目录需要在 `accounts[].userId` 里手动填（桌面版配置 `minimax-agent-cn-config.json` 的 `sharedUser.realUserID`）。不填时请求仍会成功，但面板为空、无法判断签到状态。
+
+## 👥 多账号轮询
+
+MiniMax Code 官方的多账号方式是**多个数据目录**（`mcode --profile <名字> login` 会登录到 `~/.minimax-<名字>`，或用 `MINIMAX_DATA_DIR` 环境变量）。本代理按此轮换：
+
+```json
+{
+  "accounts": [
+    { "label": "main" },
+    { "label": "alt", "dataDir": "C:/Users/you/.minimax-alt" }
+  ]
+}
+```
+
+- **策略**：请求按 round-robin 轮流分发；某账号刷新后仍 401、或遇到 429（限流）时，同一请求自动换下一个账号重试；
+- **可见性**：`GET /health` 展示每个账号的 `served` 计数、凭据有效期与最近签到状态；
+- **凭据独立**：每个数据目录各自刷新各自的 token，互不干扰。
+
+> ⚠️ **风控提示**：多账号轮询本质上是把多个账号的额度池化，属于 MiniMax 服务条款的灰色地带，社区有对「多源可疑调用」收紧风控的报告。请只用你自己注册和登录的账号，并自行评估风险。
+
 ## 🧩 配置与模型映射
 
 所有配置项均可省略；新建 `config.json`（参考 `config.example.json`）可覆盖：
@@ -89,9 +123,11 @@ MiniMax Code 的登录态存在 `~/.minimax/auth/prod/<区>/mcode-public/auth.js
 | 键 | 默认 | 说明 |
 |---|---|---|
 | `port` / `host` | `15722` / `127.0.0.1` | 监听地址 |
-| `region` | `cn` | `cn` 或 `global`，决定上游与凭据路径 |
+| `region` | `cn` | `cn` 或 `global`,决定上游与凭据路径 |
+| `accounts` | `[{ }]`(默认数据目录) | 多账号列表,每项 `{label, dataDir, region, userId, authFile}` |
+| `checkin` | `{enabled: false, intervalMinutes: 30}` | 每日自动签到开关与检查间隔 |
 | `upstream` / `oauthTokenEndpoint` | 按 region | 上游网关与 OAuth 刷新端点，一般不用改 |
-| `authFile` / `stateFile` | 按 region | MiniMax Code 凭据文件路径 |
+| `authFile` / `stateFile` | 按 region | MiniMax Code 凭据文件路径(单账号简写) |
 | `models` | 4 个 M 系模型 | 可透传的模型白名单 |
 | `defaultModel` / `fastModel` | `MiniMax-M3` / `MiniMax-M3.1-Flash-Preview` | 映射目标 |
 | `refreshSkewMs` | `120000` | 提前多少毫秒视为「将过期」 |
@@ -112,9 +148,22 @@ MiniMax Code 的登录态存在 `~/.minimax/auth/prod/<区>/mcode-public/auth.js
 | POST | `/v1/messages` | Anthropic Messages（支持 `stream: true`） |
 | POST | `/v1/messages/count_tokens` | token 计数透传 |
 | GET | `/v1/models` | 模型列表 |
-| GET | `/health` | token 剩余有效期、generation、最近一次模型映射 |
+| POST | `/checkin` | 立即对全部账号执行一次签到 |
+| GET | `/health` | 各账号凭据状态、`served` 计数、签到状态、轮询位置 |
 
 ## ❓ 常见问题
+
+<details>
+<summary><b>⏰ 签到一直 not-available</b></summary>
+
+签到面板依赖账号的 `realUserID`。给对应的 `accounts[].userId` 填上(桌面版用户看 `%APPDATA%\MiniMax\minimax-agent-cn-config.json` 的 `sharedUser.realUserID`;CLI 用户确认该数据目录执行过 `mcode login`),再 `POST /checkin` 验证。
+</details>
+
+<details>
+<summary><b>👥 怎么添加第二个账号</b></summary>
+
+执行 `mcode --profile alt login`(登录到 `~/.minimax-alt`),然后在 `accounts` 里加 `{"label":"alt","dataDir":"~/.minimax-alt 的绝对路径"}`,重启代理。同一数据目录重复登录会覆盖原账号,不要指望单目录存多账号。
+</details>
 
 <details>
 <summary><b>🔑 一直 401 / 提示重新登录</b></summary>

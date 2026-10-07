@@ -1,6 +1,6 @@
 {
   "name": "minimax-code-proxy",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Turn a logged-in MiniMax Code account into a local Anthropic-compatible endpoint for Claude Code and other Anthropic-protocol clients",
   "type": "module",
   "main": "proxy.mjs",

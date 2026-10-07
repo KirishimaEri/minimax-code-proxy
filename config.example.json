@@ -1,5 +1,13 @@
 {
   "region": "cn",
   "port": 15722,
-  "host": "127.0.0.1"
+  "host": "127.0.0.1",
+  "checkin": {
+    "enabled": true,
+    "intervalMinutes": 30
+  },
+  "accounts": [
+    { "label": "main", "userId": "你的 realUserID(可选,签到面板需要)" },
+    { "label": "alt", "dataDir": "C:/Users/you/.minimax-alt" }
+  ]
 }

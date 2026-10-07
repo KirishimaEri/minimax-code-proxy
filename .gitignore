@@ -1,6 +1,7 @@
 config.json
 proxy.log
 proxy.log.*
+checkin-state.json
 *.log
 node_modules/
 .DS_Store
